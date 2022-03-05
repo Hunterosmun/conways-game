@@ -4,12 +4,7 @@ import styled from 'styled-components'
 // Conways Game of Life
 
 // TO DO:
-// [x] Animation frame
-// [x] Dragable to fill
-// [x] Sliders for row, column, and size (also reset to default button)
-// [x] make sure clear stops animation
 // [ ] Option for hard edges or continuous (like dallins)
-// [ ] Maybe give options to go for so many frames (like 10 or 5 (sets of 16ms))
 
 function useAnimationFrame (fn) {
   let stopId = React.useRef()
@@ -53,53 +48,73 @@ export default function App () {
 
   // here we could have used React.useRef and set the ref.current to be living things
   function step () {
-    console.log({ 1: livingThings.length })
     // y = position / numOfRows
     // x = position % numOfRows
     const numOfRows = refRows.current
-    console.log({ 2: numOfRows })
     let oldLife = refLiv.current
-    console.log({ 3: oldLife.length })
     let newLife = oldLife.map((el, i) => {
       let livingTouch = 0
 
       // in this section the top is known
-      if (i > numOfRows) {
+      if (i > numOfRows - 1) {
         // top
         if (oldLife[i - numOfRows] === true) livingTouch += 1
         // top-right
+        if (i % numOfRows !== numOfRows - 1) {
+          if (oldLife[i - numOfRows + 1] === true) livingTouch += 1
+        }
+        // top-left
         if (i % numOfRows !== 0) {
           if (oldLife[i - numOfRows - 1] === true) livingTouch += 1
         }
-        // top-left
-        if (i % numOfRows !== 1) {
-          if (oldLife[i - numOfRows + 1] === true) livingTouch += 1
-        }
       }
 
+      // // top
+      // if (i > numOfRows && oldLife[i - numOfRows] === true) livingTouch += 1
+      // // top-right
+      // if (i > numOfRows && i % numOfRows !== 0) {
+      //   if (oldLife[i - numOfRows - 1] === true) livingTouch += 1
+      // }
+      // // top-left
+      // if (i > numOfRows && i % numOfRows !== 1) {
+      //   if (oldLife[i - numOfRows + 1] === true) livingTouch += 1
+      // }
+
       // right
-      if (i % numOfRows !== 0) {
+      if (i % numOfRows !== numOfRows - 1) {
         if (oldLife[i + 1] === true) livingTouch += 1
       }
 
       // left
-      if (i % numOfRows !== 1) {
+      if (i % numOfRows !== 0) {
         if (oldLife[i - 1] === true) livingTouch += 1
       }
 
       // bottom
-      if (i <= oldLife.length - numOfRows) {
+      if (i < oldLife.length - numOfRows) {
         // bottom
         if (oldLife[i + numOfRows] === true) livingTouch += 1
         // bottom-right
-        if (i % numOfRows !== 0) {
+        if (i % numOfRows !== numOfRows - 1) {
           if (oldLife[i + numOfRows + 1] === true) livingTouch += 1
         }
         // bottom-left
-        if (i % numOfRows !== 1) {
+        if (i % numOfRows !== 0) {
           if (oldLife[i + numOfRows - 1] === true) livingTouch += 1
         }
       }
+
+      // // bottom
+      // if (i <= oldLife.length - numOfRows && oldLife[i + numOfRows] === true)
+      //   livingTouch += 1
+      // // bottom-right
+      // if (i <= oldLife.length - numOfRows && i % numOfRows !== 0) {
+      //   if (oldLife[i + numOfRows + 1] === true) livingTouch += 1
+      // }
+      // // bottom-left
+      // if (i <= oldLife.length - numOfRows && i % numOfRows !== 1) {
+      //   if (oldLife[i + numOfRows - 1] === true) livingTouch += 1
+      // }
 
       // 1) Any live cell with fewer than two live neighbours dies, as if by underpopulation.
       if (el === true && livingTouch < 2) return false
@@ -202,7 +217,6 @@ export default function App () {
           onChange={e => {
             setCols(e.target.valueAsNumber)
           }}
-          name={numOfCols}
         />
         <label>Box Size</label>
         <input
@@ -210,9 +224,8 @@ export default function App () {
           type='range'
           value={size}
           onChange={e => {
-            setSize(e.target.value)
+            setSize(e.target.valueAsNumber)
           }}
-          name={size}
         />
         <button
           onClick={() => {
@@ -223,6 +236,35 @@ export default function App () {
         >
           Default
         </button>
+        <div>
+          <button
+            onClick={() => {
+              for (let i = 0; i < 5; i++) {
+                step()
+              }
+            }}
+          >
+            +5
+          </button>
+          <button
+            onClick={() => {
+              for (let i = 0; i < 10; i++) {
+                step()
+              }
+            }}
+          >
+            +10
+          </button>
+          <button
+            onClick={() => {
+              for (let i = 0; i < 20; i++) {
+                step()
+              }
+            }}
+          >
+            +20
+          </button>
+        </div>
       </BtnBox>
     </Background>
   )
@@ -251,6 +293,10 @@ const BtnBox = styled.div`
   display: flex;
   flex-direction: column;
   height: 380px;
+  div button {
+    padding: 4px 4px;
+    margin-right: 4px;
+  }
   button {
     padding: 8px 12px;
     margin-right: 8px;
