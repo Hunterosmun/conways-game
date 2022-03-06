@@ -31,11 +31,12 @@ function useAnimationFrame (fn) {
 }
 
 export default function App () {
-  const [numOfRows, setRows] = React.useState(30)
-  const [numOfCols, setCols] = React.useState(20)
-  const [size, setSize] = React.useState(24)
+  const [numOfRows, setRows] = React.useState(17)
+  const [numOfCols, setCols] = React.useState(35)
+  const [size, setSize] = React.useState(35)
   const [livingThings, setLife] = React.useState([])
   const animation = useAnimationFrame(step)
+  const [wrap, setWrap] = React.useState(false)
 
   React.useEffect(() => {
     setLife([...new Array(numOfRows * numOfCols).fill(false)])
@@ -45,76 +46,46 @@ export default function App () {
   refRows.current = numOfRows
   const refLiv = React.useRef()
   refLiv.current = livingThings
+  const refwrap = React.useRef()
+  refwrap.current = wrap
 
-  // here we could have used React.useRef and set the ref.current to be living things
   function step () {
-    // y = position / numOfRows
-    // x = position % numOfRows
     const numOfRows = refRows.current
     let oldLife = refLiv.current
+    const numOfCols = oldLife.length / numOfRows
+    let wrap = refwrap.current
+
+    function at (board, x, y) {
+      if (wrap) {
+        let _x = (x + numOfCols) % numOfCols
+        let _y = (y + numOfRows) % numOfRows
+        return board[_y * numOfCols + _x]
+      } else {
+        if (x === -1 || y === -1 || x === numOfCols || y === numOfRows) {
+          return false
+        }
+        return board[y * numOfCols + x]
+      }
+    }
+
     let newLife = oldLife.map((el, i) => {
       let livingTouch = 0
+      const x = i % numOfCols
+      const y = Math.floor(i / numOfCols)
 
-      // in this section the top is known
-      if (i > numOfRows - 1) {
-        // top
-        if (oldLife[i - numOfRows] === true) livingTouch += 1
-        // top-right
-        if (i % numOfRows !== numOfRows - 1) {
-          if (oldLife[i - numOfRows + 1] === true) livingTouch += 1
-        }
-        // top-left
-        if (i % numOfRows !== 0) {
-          if (oldLife[i - numOfRows - 1] === true) livingTouch += 1
-        }
-      }
+      //top
+      if (at(oldLife, x - 1, y + 1)) livingTouch += 1
+      if (at(oldLife, x, y + 1)) livingTouch += 1
+      if (at(oldLife, x + 1, y + 1)) livingTouch += 1
 
-      // // top
-      // if (i > numOfRows && oldLife[i - numOfRows] === true) livingTouch += 1
-      // // top-right
-      // if (i > numOfRows && i % numOfRows !== 0) {
-      //   if (oldLife[i - numOfRows - 1] === true) livingTouch += 1
-      // }
-      // // top-left
-      // if (i > numOfRows && i % numOfRows !== 1) {
-      //   if (oldLife[i - numOfRows + 1] === true) livingTouch += 1
-      // }
+      //bottom
+      if (at(oldLife, x - 1, y - 1)) livingTouch += 1
+      if (at(oldLife, x, y - 1)) livingTouch += 1
+      if (at(oldLife, x + 1, y - 1)) livingTouch += 1
 
-      // right
-      if (i % numOfRows !== numOfRows - 1) {
-        if (oldLife[i + 1] === true) livingTouch += 1
-      }
-
-      // left
-      if (i % numOfRows !== 0) {
-        if (oldLife[i - 1] === true) livingTouch += 1
-      }
-
-      // bottom
-      if (i < oldLife.length - numOfRows) {
-        // bottom
-        if (oldLife[i + numOfRows] === true) livingTouch += 1
-        // bottom-right
-        if (i % numOfRows !== numOfRows - 1) {
-          if (oldLife[i + numOfRows + 1] === true) livingTouch += 1
-        }
-        // bottom-left
-        if (i % numOfRows !== 0) {
-          if (oldLife[i + numOfRows - 1] === true) livingTouch += 1
-        }
-      }
-
-      // // bottom
-      // if (i <= oldLife.length - numOfRows && oldLife[i + numOfRows] === true)
-      //   livingTouch += 1
-      // // bottom-right
-      // if (i <= oldLife.length - numOfRows && i % numOfRows !== 0) {
-      //   if (oldLife[i + numOfRows + 1] === true) livingTouch += 1
-      // }
-      // // bottom-left
-      // if (i <= oldLife.length - numOfRows && i % numOfRows !== 1) {
-      //   if (oldLife[i + numOfRows - 1] === true) livingTouch += 1
-      // }
+      //sides
+      if (at(oldLife, x + 1, y)) livingTouch += 1
+      if (at(oldLife, x - 1, y)) livingTouch += 1
 
       // 1) Any live cell with fewer than two live neighbours dies, as if by underpopulation.
       if (el === true && livingTouch < 2) return false
@@ -131,14 +102,14 @@ export default function App () {
       return false
     })
 
-    refLiv.current = newLife
+    // refLiv.current = newLife
     setLife(newLife)
   }
 
   return (
     <Background>
       <TopBox>Conways Game of Life </TopBox>
-      <GridBlock numOfRows={numOfRows} size={size}>
+      <GridBlock numOfCols={numOfCols} size={size}>
         {livingThings.map((el, i) => (
           <Block
             key={i}
@@ -204,6 +175,7 @@ export default function App () {
         <input
           style={{ width: '90px' }}
           type='range'
+          min='3'
           value={numOfRows}
           onChange={e => {
             setRows(e.target.valueAsNumber)
@@ -213,6 +185,7 @@ export default function App () {
         <input
           style={{ width: '90px' }}
           type='range'
+          min='3'
           value={numOfCols}
           onChange={e => {
             setCols(e.target.valueAsNumber)
@@ -229,7 +202,7 @@ export default function App () {
         />
         <button
           onClick={() => {
-            setSize(24)
+            setSize(35)
             setCols(20)
             setRows(30)
           }}
@@ -265,6 +238,9 @@ export default function App () {
             +20
           </button>
         </div>
+        <button onClick={() => setWrap(!wrap)}>
+          {wrap ? 'continuous' : 'bordered'}
+        </button>
       </BtnBox>
     </Background>
   )
@@ -279,7 +255,7 @@ const Block = styled.div`
 `
 
 const GridBlock = styled.div`
-  width: ${p => p.size * p.numOfRows}px;
+  width: ${p => p.size * p.numOfCols}px;
   padding-left: 130px;
   display: flex;
   flex-wrap: wrap;
@@ -292,7 +268,7 @@ const BtnBox = styled.div`
   justify-content: space-between;
   display: flex;
   flex-direction: column;
-  height: 380px;
+  height: 400px;
   div button {
     padding: 4px 4px;
     margin-right: 4px;
